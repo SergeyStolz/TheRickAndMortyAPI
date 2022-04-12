@@ -8,6 +8,8 @@
 import Foundation
 
 protocol EpisodesViewOutput {
-    func getEpisodes(isNew: Bool)
-    var episodes: SearchRespondEpisode? { get set }
+    var episodes: [EpisodeResult]? { get set }
+    func startListening()
+    func episodeFirstLoad(at: Int)
+    func loadCharacters(request: EpisodesRequest, completionHendler: @escaping(Result<[EpisodeResult], Error>) -> Void)
 }

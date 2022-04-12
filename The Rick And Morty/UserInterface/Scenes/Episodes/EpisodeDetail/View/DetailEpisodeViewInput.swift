@@ -8,8 +8,6 @@
 protocol DetailEpisodeViewInput {
     func succes()
     func failure(error: Error)
-    func setupActivityView()
-    func removeActivityView()
-    var viewModel: [SearchRespondEpisodCharacter] { get set }
+    var viewModel: [CharacterResult] { get set }
     
 }

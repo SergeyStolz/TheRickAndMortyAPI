@@ -8,7 +8,6 @@
 import UIKit
 
 class DetailEpisodeConfigurator {
-    
     static func create(charactersList: [String]) -> UIViewController {
         let view = DetailEpisodeViewController()
         let presenter = DetailEpisodePresenter()

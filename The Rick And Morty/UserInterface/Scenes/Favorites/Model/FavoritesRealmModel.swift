@@ -15,6 +15,6 @@ class FavoritesRealmModel: Object {
     @objc dynamic var speciesCharacter: String?
     @objc dynamic var typeCharacter: String?
     @objc dynamic var genderCharacter: String?
-    @objc dynamic var imageCharacter: Data? = nil
+    @objc dynamic var imageCharacter: String?
     @objc dynamic var state = false
 }

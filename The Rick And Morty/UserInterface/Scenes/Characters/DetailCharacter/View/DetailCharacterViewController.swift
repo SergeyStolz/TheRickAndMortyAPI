@@ -7,22 +7,14 @@
 
 import UIKit
 import EasyPeasy
+import Kingfisher
 
-class DetailCharacterViewController: UIViewController, UIScrollViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource {
+class DetailCharacterViewController: UIViewController, UIScrollViewDelegate {
     
-    var presenter: DetailCharacterPresenter! = nil
-    let pre: CharacterViewOutput! = nil
-    var sss: SearchResponseCharacters?
+    // MARK: - Propierties
+    var presenter: DetailCharacterOutput!
     
-    private lazy var titleLabel: UILabel = {
-        let label = UILabel()
-        label.backgroundColor = UIColor.clear
-        label.textAlignment = .center
-        label.font = UIFont(name: "Arial", size: 25)
-        label.numberOfLines = 0
-        return label
-    }()
-    
+    // MARK: - Private Views
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.alwaysBounceVertical = true
@@ -35,27 +27,19 @@ class DetailCharacterViewController: UIViewController, UIScrollViewDelegate, UIC
         return imageView
     }()
     
-    private lazy var descriptionCharacterLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont(name: "Arial", size: 14)
-        label.numberOfLines = 0
-        return label
-    }()
-    
     private lazy var exploreMoreLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont(name: "Arial", size: 34)
         label.textAlignment = .left
         label.text = "Explore more"
+        label.textColor = UIColor.gray
         return label
     }()
-    
-    
     
     private lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(
             frame: .zero,
-            collectionViewLayout: compositionalLayout
+            collectionViewLayout: DetailCharacterViewController.createLayout()
         )
         collectionView.register(
             DetailCharacterCollectionViewCell.self,
@@ -66,188 +50,141 @@ class DetailCharacterViewController: UIViewController, UIScrollViewDelegate, UIC
         collectionView.delegate = self
         collectionView.clipsToBounds = false
         collectionView.layer.masksToBounds = false
-//        collectionView.addShadow(color: UIColor.orange.cgColor, shadowRadius: 5, shadowOpacity: 0.5)
         return collectionView
     }()
-    
-    let compositionalLayout: UICollectionViewCompositionalLayout = {
-        let fraction: CGFloat = 1.0 / 3.0
-        
-        // Item
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalHeight(1))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        
-        // Group
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(fraction), heightDimension: .fractionalWidth(fraction))
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-        
-        // Section
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 2.5, bottom: 0, trailing: 2.5)
-        section.orthogonalScrollingBehavior = .continuous
-        
-        section.visibleItemsInvalidationHandler = { (items, offset, environment) in
-            items.forEach { item in
-                let distanceFromCenter = abs((item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
-                let minScale: CGFloat = 0.6
-                let maxScale: CGFloat = 1.1
-                let scale = max(maxScale - (distanceFromCenter / environment.container.contentSize.width), minScale)
-                item.transform = CGAffineTransform(scaleX: scale, y: scale)
-            }
-        }
-        
-        return UICollectionViewCompositionalLayout(section: section)
-    }()
-    
     
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        presenter.getCharacters()
+        setupNavAndTabBars()
         setupViews()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        titleLabel.removeFromSuperview()
+        fill()
     }
     
     private func setupViews() {
+        view.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
         view.addSubview(scrollView)
         scrollView.addSubview(collectionView)
         scrollView.addSubview(characterImageView)
-        scrollView.addSubview(descriptionCharacterLabel)
         scrollView.addSubview(exploreMoreLabel)
-        
-        
-        guard let navigationBar = self.navigationController?.navigationBar else { return }
-//        title = presenter.data.name
-        navigationBar.topItem!.title = ""
-        navigationBar.tintColor = UIColor.green
-        
-        navigationBar.addSubview(titleLabel)
-        titleLabel.text = presenter.data.name
-        titleLabel.setLineSpacing(lineSpacing: 0,
-                                  lineHeightMultiple: 0,
-                                  characterSpacing: -0.41)
-        titleLabel.easy.layout(
-            CenterX(),
-            Top(11),
-            Height(30),
-            Width(<=300)
-        )
         
         scrollView.easy.layout(
             Top(),
             Bottom(),
             Width(view.frame.size.width)
         )
-        
         characterImageView.easy.layout(
             Top(15),
             Height(375),
             Width(view.frame.size.width)
         )
         
-        descriptionCharacterLabel.easy.layout(
-            Top(16).to(characterImageView),
-            Left(16),
-            Right(16),
-            Height(>=0),
-            Width(view.frame.size.width)
-        )
-        descriptionCharacterLabel.text = presenter.data.gender
-        descriptionCharacterLabel.setLineSpacing(lineSpacing: 0,
-                                                 lineHeightMultiple: 1.3,
-                                                 characterSpacing: -0.41
-        )
-        
         exploreMoreLabel.easy.layout(
-            Top(18).to(descriptionCharacterLabel),
+            Top(30).to(characterImageView),
             Left(16),
             Height(34),
             Width(<=210)
         )
-        
         collectionView.easy.layout(
             Top(18).to(exploreMoreLabel),
             Width(view.frame.size.width),
             Height(120),
             Bottom(44)
         )
-        
-        let urlString = presenter.data.image
-        guard let url = URL(string: urlString)  else { return }
-        if let data = NSData(contentsOf: url) {
-            characterImageView.image = UIImage(data: data as Data)!
-        }
-        view.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
     }
     
-    // MARK: - UICollectionViewDataSource
+    private func setupNavAndTabBars() {
+        guard let navigationBar = self.navigationController?.navigationBar else { return }
+        navigationBar.isHidden = false
+        navigationItem.title = presenter.currentCharacter?.name
+        navigationBar.topItem!.title = ""
+        navigationBar.tintColor = UIColor.green
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.1215686275, green: 0.1215686275, blue: 0.1215686275, alpha: 0.9396283223)
+        navigationController?.navigationBar.addShadow(
+            color: UIColor.green.cgColor,
+            shadowRadius: 0.6,
+            shadowOpacity: 0.3
+        )
+    }
+    
+    private func fill() {
+        guard let item = presenter.currentCharacter else { return }
+        DispatchQueue.main.async {
+            let urlString = item.image
+            guard let url = URL(string: urlString) else { return }
+            self.characterImageView.kf.indicatorType = .activity
+            self.characterImageView.kf.setImage(with: url)
+        }
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+extension DetailCharacterViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return 10
     }
     
-//    var char: [ResultsCharacter]? = nil
-//
-//    override func viewWillAppear(_ animated: Bool) {
-//        guard var char = presenter.characters?.results else { return cell }
-//        char.shuffle()
-//    }
-    
-    var char: ResultsCharacter? = nil
-
-    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DetailCharacterCollectionViewCell.identifier, for: indexPath) as! DetailCharacterCollectionViewCell
-        guard var char = presenter.characters?.results else { return cell }
-        char.shuffle()
-        guard let character = presenter.characters?.results[indexPath.item] else { return cell }
         
-        
-        cell.filll(item: char[indexPath.item])
+        guard let character = presenter.allCharacters?[indexPath.item] else { return cell }
+        cell.filll(item: character)
         cell.addShadow(color: UIColor.green.cgColor, shadowRadius: 7, shadowOpacity: 0.4)
         return cell
     }
-    
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let character = presenter.characters?.results[indexPath.item]
-        
-        let data = character
-        let characterDetail = DetailCharacterViewController()
-        characterDetail.char = data
-       
-        navigationController?.pushViewController(characterDetail, animated: true)
-    
 }
-    
+
+// MARK: - UICollectionViewDelegate
+extension DetailCharacterViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let currentCharacter = presenter.allCharacters?[indexPath.item] else { return }
+        guard let allCharacters = presenter.allCharacters else { return }
+        let characterDetail = CharacterDetailConfigurator.create(currentCharacter: currentCharacter, allCharacters: allCharacters)
+        navigationController?.pushViewController(characterDetail, animated: true)
+    }
+}
+
+// MARK: - Create Layout
+extension DetailCharacterViewController {
+    static func createLayout() -> UICollectionViewCompositionalLayout {
+        let fraction: CGFloat = 1.0 / 3.0
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1),
+            heightDimension: .fractionalHeight(1))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(fraction),
+            heightDimension: .fractionalWidth(fraction))
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: groupSize,
+            subitems: [item])
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 2.5,
+            bottom: 0,
+            trailing: 2.5)
+        section.orthogonalScrollingBehavior = .continuous
+        section.visibleItemsInvalidationHandler = { (items, offset, environment) in
+            items.forEach { item in
+                let distanceFromCenter = abs(
+                    (item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
+                let minScale: CGFloat = 0.6
+                let maxScale: CGFloat = 1.1
+                let scale = max(maxScale - (distanceFromCenter / environment.container.contentSize.width), minScale)
+                item.transform = CGAffineTransform(scaleX: scale, y: scale)
+            }
+        }
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+}
+
+// MARK: - DetailCharacterInput
+extension DetailCharacterViewController: DetailCharacterInput {
     func succes() {
         self.collectionView.reloadData()
     }
     
     func failure(error: Error) {
-    }
-}
-
-extension UILabel {
-    func setLineSpacing(lineSpacing: CGFloat,
-                        lineHeightMultiple: CGFloat,
-                        characterSpacing: CGFloat) {
-        
-        guard let labelText = self.text else { return }
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = lineSpacing
-        paragraphStyle.lineHeightMultiple = lineHeightMultiple
-        
-        let attributedString:NSMutableAttributedString
-        if let labelattributedText = self.attributedText {
-            attributedString = NSMutableAttributedString(attributedString: labelattributedText)
-        } else {
-            attributedString = NSMutableAttributedString(string: labelText)
-        }
-        
-        attributedString.addAttribute(NSAttributedString.Key.paragraphStyle, value:paragraphStyle, range:NSMakeRange(0, attributedString.length))
-        attributedString.addAttribute(NSAttributedString.Key.kern, value: characterSpacing, range: NSMakeRange(0, attributedString.length))
-        self.attributedText = attributedString
     }
 }

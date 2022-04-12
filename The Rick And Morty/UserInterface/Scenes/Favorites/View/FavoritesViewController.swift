@@ -9,23 +9,27 @@ import UIKit
 import RealmSwift
 import EasyPeasy
 
-class FavoritesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    
+class FavoritesViewController: UIViewController {
+        
     // MARK: - Properties
     var presenter: FavoritesViewOutput!
-    let detailView = DetailCharacterView()
-    
     private let realm = try! Realm()
     private lazy var items: Results<FavoritesRealmModel>! = {
         self.realm.objects(FavoritesRealmModel.self)
     }()
     
-    // MARK: - Views
+    // MARK: - Private Views
+    private lazy var detailView: DetailCharacterView = {
+        let view = DetailCharacterView()
+        return view
+    }()
+    
     private lazy var tableView: UITableView! = {
         let tableView = UITableView()
         tableView.rowHeight = 110
         tableView.register(FavoritesTableViewCell.self,
                            forCellReuseIdentifier: FavoritesTableViewCell.identifier)
+        tableView.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
         tableView.dataSource = self
         tableView.delegate = self
         return tableView
@@ -46,10 +50,9 @@ class FavoritesViewController: UIViewController, UITableViewDataSource, UITableV
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavBarAndTabBar()
         view.addSubview(tableView)
         tableView.easy.layout( Edges() )
-        configureTapGesture()
-        tableView.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -72,35 +75,35 @@ class FavoritesViewController: UIViewController, UITableViewDataSource, UITableV
         )
     }
     
+    private func setupNavBarAndTabBar() {
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.1215686275, green: 0.1215686275, blue: 0.1215686275, alpha: 0.9396283223)
+        tabBarController?.tabBar.barTintColor = #colorLiteral(red: 0.1215686275, green: 0.1215686275, blue: 0.1215686275, alpha: 0.9396283223)
+        navigationController?.navigationBar.addShadow(
+            color: UIColor.green.cgColor,
+            shadowRadius: 0.6,
+            shadowOpacity: 0.3
+        )
+    }
+    
     private func setupDetailCharacterView() {
         view.addSubview(detailView)
-        detailView.transform = CGAffineTransform(scaleX: 1.25, y: 1.25)
-        detailView.alpha = 0
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.detailView.alpha = 1
-            self.detailView.transform = CGAffineTransform.identity
-        }
+        detailView.unfadeScaleTransform()
     }
     
-    private func configureTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(showDetailCharacterView))
-        detailView.addGestureRecognizer(tapGesture)
-//        view.addGestureRecognizer(tapGesture)
-    }
-    
-    @objc private func showDetailCharacterView() {
-        UIView.animate(withDuration: 0.3, animations: { [weak self] in
-            guard let self = self else { return }
-            self.detailView.transform = CGAffineTransform(scaleX: 1.25, y: 1.25)
-            self.detailView.alpha = 0
-        }
-        ) { (success) in
-            self.detailView.removeFromSuperview()
+    private func deleteFromRealm(item: FavoritesRealmModel) {
+        try! self.realm.write {
+            self.realm.delete(item)
         }
     }
-    
-    // MARK: - TableViewDataSource
+    private func showNotificationLabel(item: FavoritesRealmModel) {
+        view.addSubview(notificationLabel)
+        self.notificationLabel.text = "\(item.nameCharacter!) удален из избранного"
+        self.notificationLabel.showAnimation()
+    }
+}
+
+// MARK: - TableViewDataSource
+extension FavoritesViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if items.count == 0 {
             setEmptyMessage("You haven't added your favorite characters,\n but you can fix it easily")
@@ -113,10 +116,8 @@ class FavoritesViewController: UIViewController, UITableViewDataSource, UITableV
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: FavoritesTableViewCell.identifier,
                                                  for: indexPath) as! FavoritesTableViewCell
-        
         let item = FavoritesCellViewModel(items[indexPath.row])
         cell.fill(item: item)
-//        cell.accessoryType = UITableViewCell.AccessoryType.detailButton
         cell.layer.borderColor = UIColor.gray.cgColor
         cell.layer.borderWidth = 0.1
         cell.layer.cornerRadius = 12
@@ -124,96 +125,28 @@ class FavoritesViewController: UIViewController, UITableViewDataSource, UITableV
         return cell
     }
     
-  
-    
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        let item = self.items[indexPath.item]
-        view.addSubview(notificationLabel)
-        UIView.animate(withDuration: 1.0,
-                       delay: 0.1,
-                       options: .curveEaseOut,
-                       animations: {
-                        self.notificationLabel.text = "\(item.nameCharacter ?? "") remove from favorites"
-            self.notificationLabel.alpha = 0.7
-                       },
-                       completion: { finished in
-                        UIView.animate(withDuration: 0.3, delay: 0.8, animations: {
-                            self.notificationLabel.alpha = 0
-                        })
-                       })
-         if editingStyle == .delete {
-            try! self.realm.write {
-                self.realm.delete(item)
-            }
+        if editingStyle == .delete {
+            let item = items[indexPath.item]
+            showNotificationLabel(item: item)
+            deleteFromRealm(item: item)
             tableView.reloadData()
             return
         }
     }
     
-    func tableView(_ tableView: UITableView,
-                   editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
-        return .delete
-    }
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let item = self.items[indexPath.item]
-        detailView.nameCharacterLabel.text = item.nameCharacter
-        detailView.speciesCharacterLabel.text = "Species: \(item.speciesCharacter ?? "")"
-        detailView.statusCharacterLabel.text = "Status: \(item.statusCharacter ?? "")"
-        detailView.genderCharacterLabel.text = "Gender: \(item.genderCharacter ?? "")"
-        detailView.idCharacterLabel.text = "\(item.id)"
-        
-        if item.statusCharacter == "Alive" {
-            detailView.statusCircleLabel.backgroundColor = .green
-        } else if item.statusCharacter == "unknown" {
-            detailView.statusCircleLabel.backgroundColor = .brown
-        }  else if item.statusCharacter == "Dead" {
-            detailView.statusCircleLabel.backgroundColor = .red
-        }
-        
-        if item.typeCharacter == "" {
-            detailView.typeCharacterLabel.text = "Type: Unknow"
-        } else {
-            detailView.typeCharacterLabel.text = "Type: \(item.typeCharacter ?? "")"
-        }
-        
-        let image = UIImage(data: item.imageCharacter!)
-        detailView.characterImageView.image = image
-        
+        let favoriteCharacter = FavoritesCellViewModel(items[indexPath.row])
+        detailView.character = favoriteCharacter
         setupDetailCharacterView()
     }
     
-    // MARK: - AccessoryButtonTapped
-    func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-        let item = self.items[indexPath.item]
-        detailView.nameCharacterLabel.text = item.nameCharacter
-        detailView.speciesCharacterLabel.text = "Species: \(item.speciesCharacter ?? "")"
-        detailView.statusCharacterLabel.text = "Status: \(item.statusCharacter ?? "")"
-        detailView.genderCharacterLabel.text = "Gender: \(item.genderCharacter ?? "")"
-        detailView.idCharacterLabel.text = "\(item.id)"
-        
-        if item.statusCharacter == "Alive" {
-            detailView.statusCircleLabel.backgroundColor = .green
-        } else if item.statusCharacter == "unknown" {
-            detailView.statusCircleLabel.backgroundColor = .brown
-        }  else if item.statusCharacter == "Dead" {
-            detailView.statusCircleLabel.backgroundColor = .red
-        }
-        
-        if item.typeCharacter == "" {
-            detailView.typeCharacterLabel.text = "Type: Unknow"
-        } else {
-            detailView.typeCharacterLabel.text = "Type: \(item.typeCharacter ?? "")"
-        }
-        
-        let image = UIImage(data: item.imageCharacter!)
-        detailView.characterImageView.image = image
-        
-        setupDetailCharacterView()
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        return .delete
     }
 }
 
+// MARK: - SetEmptyMessage
 extension FavoritesViewController {
     func setEmptyMessage(_ message: String) {
         let messageLabel = UILabel(
@@ -226,7 +159,7 @@ extension FavoritesViewController {
         )
         messageLabel.frame = view.bounds
         messageLabel.text = message
-        messageLabel.textColor = .black
+        messageLabel.textColor = .gray
         messageLabel.numberOfLines = 0
         messageLabel.textAlignment = .center
         messageLabel.font = UIFont(name: "TrebuchetMS", size: 19)

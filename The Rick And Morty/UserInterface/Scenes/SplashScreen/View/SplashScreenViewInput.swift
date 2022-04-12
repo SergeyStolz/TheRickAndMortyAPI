@@ -6,3 +6,11 @@
 //
 
 import Foundation
+
+protocol SplashScreenViewInput {
+    func failure(error: Error)
+    func succes(characters: [CharacterResult]?)
+    func startActivityView()
+    func stopActivityView()
+    func removeActivityView()
+}

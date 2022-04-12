@@ -7,11 +7,12 @@
 
 import UIKit
 import EasyPeasy
+import Kingfisher
 
 class FavoritesTableViewCell: UITableViewCell {
     static let identifier = "CustomCollectionViewCell"
     
-    // MARK: - Views
+    // MARK: - Private Views
     private lazy var characterImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 8
@@ -28,7 +29,6 @@ class FavoritesTableViewCell: UITableViewCell {
         label.backgroundColor = .clear
         label.textAlignment = .left
         label.numberOfLines = 0
-
         return label
     }()
     
@@ -38,7 +38,6 @@ class FavoritesTableViewCell: UITableViewCell {
         label.backgroundColor = .clear
         label.textAlignment = .left
         label.numberOfLines = 0
-
         return label
     }()
     
@@ -51,7 +50,6 @@ class FavoritesTableViewCell: UITableViewCell {
         label.layer.cornerRadius = 8
         label.layer.masksToBounds = true
         label.numberOfLines = 0
-
         return label
     }()
     
@@ -60,97 +58,13 @@ class FavoritesTableViewCell: UITableViewCell {
         label.layer.cornerRadius = 4
         label.layer.masksToBounds = true
         label.numberOfLines = 0
-
         return label
     }()
     
     // MARK: - Life Cycle
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        contentView.addSubview(characterImageView)
-        contentView.addSubview(nameCharacterLabel)
-        contentView.addSubview(speciesCharacterLabel)
-        contentView.addSubview(statusCharacterLabel)
-        contentView.addSubview(statusCircleLabel)
-        contentView.clipsToBounds = true
-        contentView.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
-
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        setupCharacterImageView()
-        setupNameCharacterLabel()
-        setupSpeciesCharacterLabel()
-        setupStatusCharacterLabel()
-        setupStatusCircleLabel()
-    }
-    
-    private func setupCharacterImageView() {
-        characterImageView.easy.layout(
-            Top(5),
-            Bottom(5),
-            Left(5),
-            Width(90)
-        )
-    }
-    
-    private func setupStatusCharacterLabel() {
-        statusCharacterLabel.easy.layout(
-            Top(10).to(speciesCharacterLabel),
-            Left(10).to(characterImageView),
-            Height(20),
-            Width(<=100)
-        )
-    }
-    
-    private func setupStatusCircleLabel() {
-        statusCircleLabel.easy.layout(
-            Top(12).to(nameCharacterLabel),
-            Left(5).to(statusCharacterLabel),
-            Height(10),
-            Width(10)
-        )
-    }
-    
-    private func setupNameCharacterLabel() {
-        nameCharacterLabel.easy.layout(
-            Top(10),
-            Left(10).to(characterImageView),
-            Right(5),
-            Height(<=20)
-        )
-    }
-    
-    private func setupSpeciesCharacterLabel() {
-        speciesCharacterLabel.easy.layout(
-            Top(10).to(nameCharacterLabel),
-            Left(10).to(characterImageView),
-            Right(5),
-            Height(<=20)
-        )
-    }
-    
-    func fill(item: FavoritesCellViewModel) {
-        characterImageView.image = item.image
-        nameCharacterLabel.text = item.name
-        speciesCharacterLabel.text = item.species
-        statusCharacterLabel.text = " \(item.status) "
         
-        if item.status == "Alive" {
-            statusCharacterLabel.backgroundColor = .green
-            statusCharacterLabel.textColor = .white
-        } else if item.status == "unknown" {
-            statusCharacterLabel.backgroundColor = .brown
-            statusCharacterLabel.textColor = .white
-        }  else if item.status == "Dead" {
-            statusCharacterLabel.backgroundColor = .red
-            statusCharacterLabel.textColor = .white
-        }
     }
     
     override func prepareForReuse() {
@@ -160,5 +74,82 @@ class FavoritesTableViewCell: UITableViewCell {
         speciesCharacterLabel.text = nil
         statusCharacterLabel.text = nil
     }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setupViews()
+    }
+    
+    private func setupViews() {
+        contentView.addSubview(characterImageView)
+        contentView.addSubview(nameCharacterLabel)
+        contentView.addSubview(speciesCharacterLabel)
+        contentView.addSubview(statusCharacterLabel)
+        contentView.addSubview(statusCircleLabel)
+        contentView.clipsToBounds = true
+        contentView.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
+        
+        characterImageView.easy.layout(
+            Top(5),
+            Bottom(5),
+            Left(5),
+            Width(90)
+        )
+        statusCharacterLabel.easy.layout(
+            Top(10).to(speciesCharacterLabel),
+            Left(10).to(characterImageView),
+            Height(20),
+            Width(<=100)
+        )
+        statusCircleLabel.easy.layout(
+            Top(12).to(nameCharacterLabel),
+            Left(5).to(statusCharacterLabel),
+            Height(10),
+            Width(10)
+        )
+        nameCharacterLabel.easy.layout(
+            Top(10),
+            Left(10).to(characterImageView),
+            Right(5),
+            Height(<=20)
+        )
+        speciesCharacterLabel.easy.layout(
+            Top(10).to(nameCharacterLabel),
+            Left(10).to(characterImageView),
+            Right(5),
+            Height(<=20)
+        )
+    }
 }
 
+// MARK: - Fill
+extension FavoritesTableViewCell {
+    func fill(item: FavoritesCellViewModel) {
+        nameCharacterLabel.text = item.name
+        speciesCharacterLabel.text = item.species
+        statusCharacterLabel.text = " \(item.status) "
+        let urlString = item.image
+        guard let url = URL(string: urlString) else { return }
+        characterImageView.kf.indicatorType = .activity
+        characterImageView.kf.setImage(with: url)
+        
+        let stateCharacter = StatusChar.init(rawValue: item.status)
+        switch stateCharacter {
+        case .alive:
+            statusCharacterLabel.backgroundColor = .green
+            statusCharacterLabel.textColor = .white
+        case .unknown:
+            statusCharacterLabel.backgroundColor = .brown
+            statusCharacterLabel.textColor = .white
+        case .dead:
+            statusCharacterLabel.backgroundColor = .red
+            statusCharacterLabel.textColor = .white
+        case .none:
+            break
+        }
+    }
+}

@@ -7,24 +7,29 @@
 
 import UIKit
 import EasyPeasy
+import Alamofire
 
 class EpisodesViewController: UIViewController {
     
-    var presenter: EpisodesPresenter!
-    var episodes: SearchRespondEpisode?
+    // MARK: - Propierties
+    var presenter: EpisodesViewOutput!
+    private var episodes: [EpisodeResult]? = nil
+    private let networkManager = NetworkReachabilityManager()
+    private var loadAfterLostConnection = false
+    private var lastOffset: Int = 1
+    private var hasNextPage = true
     
     // MARK: - Views
-   
-    
     private lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(
             frame: .zero,
-            collectionViewLayout: compositionalLayout
+            collectionViewLayout: EpisodesViewController.createLayout()
         )
         collectionView.register(
             EpisodCell.self,
             forCellWithReuseIdentifier: EpisodCell.identifier
         )
+        collectionView.contentInset = .init(top: 25, left: 3, bottom: 0, right: 0)
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.backgroundColor = #colorLiteral(red: 0.1215521768, green: 0.1215801314, blue: 0.1215485111, alpha: 0.9396283223)
@@ -38,38 +43,64 @@ class EpisodesViewController: UIViewController {
         return activityView
     }()
     
-    private lazy var fadeView: UIView = {
-        let fadeView:UIView = UIView()
-        fadeView.frame = self.view.frame
-        fadeView.backgroundColor = UIColor.white
-        fadeView.alpha = 0.4
-        return fadeView
-    }()
-    
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavBarAndTabBar()
         view.addSubview(collectionView)
         collectionView.easy.layout( Edges() )
-        presenter.getEpisodes(isNew: true)
+        presenter.episodeFirstLoad(at: lastOffset)
     }
     
-    let compositionalLayout: UICollectionViewCompositionalLayout = {
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationItem.title = "Episodes"
+        presenter.startListening()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        networkManager?.stopListening()
+    }
+    
+    private func setupNavBarAndTabBar() {
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.1215686275, green: 0.1215686275, blue: 0.1215686275, alpha: 0.9396283223)
+        tabBarController?.tabBar.barTintColor = #colorLiteral(red: 0.1215686275, green: 0.1215686275, blue: 0.1215686275, alpha: 0.9396283223)
+        navigationController?.navigationBar.addShadow(
+            color: UIColor.green.cgColor,
+            shadowRadius: 0.6,
+            shadowOpacity: 0.3
+        )
+    }
+}
+
+// MARK: - CreateLayout
+extension EpisodesViewController {
+    static func createLayout() -> UICollectionViewCompositionalLayout {
         let fraction: CGFloat = 2.5 / 3.0
-        
-        // Item
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalHeight(1.8))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        
-        // Group
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(fraction), heightDimension: .fractionalWidth(fraction))
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-        
-        // Section
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1),
+            heightDimension: .fractionalHeight(1.8)
+        )
+        let item = NSCollectionLayoutItem(
+            layoutSize: itemSize
+        )
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(fraction),
+            heightDimension: .fractionalWidth(fraction)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: groupSize,
+            subitems: [item]
+        )
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 25, leading: 30, bottom: 0, trailing: 2.5)
+        section.contentInsets = NSDirectionalEdgeInsets(
+            top: 25,
+            leading: 30,
+            bottom: 0,
+            trailing: 2.5
+        )
         section.orthogonalScrollingBehavior = .continuous
-        
         section.visibleItemsInvalidationHandler = { (items, offset, environment) in
             items.forEach { item in
                 let distanceFromCenter = abs((item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
@@ -79,76 +110,60 @@ class EpisodesViewController: UIViewController {
                 item.transform = CGAffineTransform(scaleX: scale, y: scale)
             }
         }
-        
         return UICollectionViewCompositionalLayout(section: section)
-    }()
-    
+    }
 }
 
+// MARK: - UICollectionViewDelegate
 extension EpisodesViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView,
-                        didSelectItemAt indexPath: IndexPath) {
-        
-        guard let charactersName = presenter.episodes?.results[indexPath.row].characters else { return }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let charactersName = presenter.episodes?[indexPath.row].characters else { return }
         let episodeDetail = DetailEpisodeConfigurator.create(charactersList: charactersName)
         self.navigationController?.pushViewController(episodeDetail, animated: true)
     }
 }
 
+// MARK: - UICollectionViewDataSource
 extension EpisodesViewController: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView,
-                        numberOfItemsInSection section: Int) -> Int {
-        return presenter.episodes?.results.count ?? 0
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return presenter.episodes?.count ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView,
                         cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: EpisodCell.identifier,
-            for: indexPath) as! EpisodCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EpisodCell.identifier,
+                                                      for: indexPath) as! EpisodCell
         
-        let episodes = presenter.episodes?.results[indexPath.item]
         cell.configure(label: "#\(indexPath.item + 1) Episode")
         cell.addShadow(color: UIColor.green.cgColor, shadowRadius: 25, shadowOpacity: 0.7)
         return cell
     }
-    
-    
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        
-        let totalCount = presenter.episodes?.info.count ?? 0
-        let currentCount = presenter.episodes?.results.count ?? 0
-        
-        if indexPath.item == currentCount - 1 {
-            if currentCount < totalCount {
-                presenter.getEpisodes(isNew: false)
-            }
+}
+
+// MARK: - ScrollViewDidScroll
+extension EpisodesViewController {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        if offsetY > contentHeight - scrollView.frame.size.height * 0.95 {
+            if !hasNextPage { return }
+            lastOffset += 1
+            presenter.episodeFirstLoad(at: lastOffset)
         }
     }
 }
 
+// MARK: - EpisodesViewInput
 extension EpisodesViewController: EpisodesViewInput {
-    
-    func setupActivityView() {
-        view.addSubview(fadeView)
-        view.addSubview(activityView)
-        activityView.easy.layout(
-            CenterX(),
-            CenterY()
-        )
-        activityView.startAnimating()
-    }
-    
-    func removeActivityView() {
-        fadeView.removeFromSuperview()
-        activityView.stopAnimating()
-    }
-    
     func succes() {
         collectionView.reloadData()
     }
     func failure(error: Error) {
         print(error.localizedDescription)
+    }
+    
+    func showAlert() {
+        showConnectionAlert()
     }
 }
 

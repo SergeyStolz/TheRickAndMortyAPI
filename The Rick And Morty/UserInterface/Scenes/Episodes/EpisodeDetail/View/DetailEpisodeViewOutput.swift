@@ -8,5 +8,5 @@
 import Foundation
 
 protocol DetailEpisodeViewOutput {
-    func updateBetsCollectionView(model: [SearchRespondEpisodCharacter])
+    func updateBetsCollectionView(model: [CharacterResult])
 }

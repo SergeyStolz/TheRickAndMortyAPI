@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+struct EpisodesRequest: Dictionariable {
+    let name: String?
+    let page: Int?
+}

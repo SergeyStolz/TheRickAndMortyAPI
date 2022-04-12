@@ -5,4 +5,11 @@
 //  Created by mac on 08.04.2022.
 //
 
-import Foundation
+import UIKit
+
+extension UIApplication {
+    static var rootViewController: UIViewController? {
+        get { shared.keyWindow?.rootViewController }
+        set { shared.keyWindow?.rootViewController = newValue }
+    }
+}

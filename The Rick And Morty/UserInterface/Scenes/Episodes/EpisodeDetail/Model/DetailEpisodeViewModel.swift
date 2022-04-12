@@ -16,7 +16,7 @@ struct DetailEpisodeViewModel {
     var type: String
     var gender: String
     
-    init(item: SearchRespondEpisodCharacter) {
+    init(item: CharacterResult) {
         self.id = item.id
         self.name = item.name
         self.image = item.image

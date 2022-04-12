@@ -5,4 +5,15 @@
 //  Created by mac on 05.04.2022.
 //
 
-import Foundation
+import UIKit
+
+class EpisodesConfigurator {
+    static func create() -> UIViewController {
+        let view = EpisodesViewController()
+        let presenter = EpisodesPresenter()
+        view.presenter = presenter
+        presenter.view = view
+        return view
+    }
+}
+

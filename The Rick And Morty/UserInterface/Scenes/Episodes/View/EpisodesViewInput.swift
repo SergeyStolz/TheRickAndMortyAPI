@@ -10,6 +10,5 @@ import Foundation
 protocol EpisodesViewInput {
     func succes()
     func failure(error: Error)
-    func setupActivityView()
-    func removeActivityView()
+    func showAlert() 
 }

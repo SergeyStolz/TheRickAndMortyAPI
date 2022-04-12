@@ -11,10 +11,11 @@ import UIKit
 
 class CharacterDetailConfigurator {
     
-    static func create(data: ResultsCharacter?) -> UIViewController {
+    static func create(currentCharacter: CharacterResult?, allCharacters: [CharacterResult]?) -> UIViewController {
         let view = DetailCharacterViewController()
         let presenter = DetailCharacterPresenter()
-        presenter.data = data
+        presenter.currentCharacter = currentCharacter
+        presenter.allCharacters = allCharacters
         view.presenter = presenter
         presenter.view = view
         return view

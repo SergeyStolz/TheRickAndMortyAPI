@@ -9,8 +9,9 @@ import UIKit
 import EasyPeasy
 
 class DetailEpisodeViewController: UIViewController {
+    
     var presenter: DetailEpisodePresenter!
-    var viewModel = [SearchRespondEpisodCharacter]()
+    var viewModel = [CharacterResult]()
     let detailView = DetailCharacterView()
     
     // MARK: - Views
@@ -34,45 +35,27 @@ class DetailEpisodeViewController: UIViewController {
         return layout
     }()
     
-    private lazy var activityView: UIActivityIndicatorView = {
-        let activityView = UIActivityIndicatorView(style: .large)
-        activityView.hidesWhenStopped = true
-        activityView.center = self.view.center
-        return activityView
-    }()
-    
-    private lazy var fadeView: UIView = {
-        let fadeView:UIView = UIView()
-        fadeView.frame = self.view.frame
-        fadeView.backgroundColor = UIColor.white
-        fadeView.alpha = 0.4
-        return fadeView
-    }()
-    
-    
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(collectionView)
-        collectionView.easy.layout( Edges() )
         presenter.getEpisodes()
+        collectionView.easy.layout( Edges() )
         setupNavigationController()
      }
     
     private func setupNavigationController() {
         title = "Episode characters"
         guard let navigationBar = self.navigationController?.navigationBar else { return }
-//        title = presenter.data.name
         navigationBar.topItem!.title = ""
         navigationBar.tintColor = UIColor.green
-        
-        
         let navController = UINavigationController()
         navController.navigationBar.titleTextAttributes =
             [NSAttributedString.Key.font: UIFont.init(name: "Hoefler Text", size: 25)!]
     }
 }
 
+// MARK: - UICollectionViewDataSource
 extension DetailEpisodeViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.count
@@ -86,22 +69,8 @@ extension DetailEpisodeViewController: UICollectionViewDataSource {
     }
 }
 
+// MARK: - DetailEpisodeViewInput
 extension DetailEpisodeViewController: DetailEpisodeViewInput {
-   func setupActivityView() {
-        view.addSubview(fadeView)
-        view.addSubview(activityView)
-        activityView.easy.layout(
-            CenterX(),
-            CenterY()
-        )
-        activityView.startAnimating()
-    }
-    
-    func removeActivityView() {
-        fadeView.removeFromSuperview()
-        activityView.stopAnimating()
-    }
-    
     func succes() {
         collectionView.reloadData()
     }
@@ -109,7 +78,7 @@ extension DetailEpisodeViewController: DetailEpisodeViewInput {
     func failure(error: Error) {
         print(error.localizedDescription)
     }
-    func updateBetsCollectionView(model: [SearchRespondEpisodCharacter]) {
+    func updateCollectionView(model: [CharacterResult]) {
         viewModel = model
         collectionView.reloadData()
     }

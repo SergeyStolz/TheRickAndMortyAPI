@@ -10,8 +10,7 @@ import Foundation
 class FavoritesPresenter {
     var view: FavoritesViewController?
 }
+
 extension FavoritesPresenter: FavoritesViewOutput {
-    
-    
 }
 

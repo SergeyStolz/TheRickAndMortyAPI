@@ -41,7 +41,7 @@ class DetailCharacterCollectionViewCell: UICollectionViewCell {
         characterImageView.image = nil
     }
     
-    func filll(item: ResultsCharacter) {
+    func filll(item: CharacterResult) {
         let urlString = item.image
         guard let url = URL(string: urlString) else { return }
         characterImageView.kf.indicatorType = .activity
@@ -54,20 +54,4 @@ class DetailCharacterCollectionViewCell: UICollectionViewCell {
         characterImageView.kf.indicatorType = .activity
         characterImageView.kf.setImage(with: url)
     }
-    
-    func config(image: String) {
-        let urlString = image
-        guard let url = URL(string: urlString) else { return }
-        characterImageView.kf.indicatorType = .activity
-        characterImageView.kf.setImage(with: url)
-    }
 }
-
-//extension UIView {
-//  func addShadow() {
-//    self.layer.shadowColor = UIColor.black.cgColor
-//    self.layer.shadowOffset = CGSize(width: -1, height: 2)
-//    self.layer.shadowRadius = 1.8
-//    self.layer.shadowOpacity = 0.3
-//  }
-//}

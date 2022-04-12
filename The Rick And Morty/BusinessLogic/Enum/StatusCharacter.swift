@@ -6,3 +6,9 @@
 //
 
 import Foundation
+
+enum StatusChar: String, CaseIterable {
+    case alive = "Alive"
+    case unknown = "unknown"
+    case dead = "Dead"
+}

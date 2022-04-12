@@ -9,8 +9,9 @@
 import Foundation
 
 protocol DetailCharacterOutput {
-    var data: ResultsCharacter! { get set }
-    func showItem()
-    func getCharacters()
-    var characters: SearchResponseCharacters? { get set }
+    var allCharacters: [CharacterResult]? { get set }
+    var charactersList: [CharacterResult]? { get set }
+    var currentCharacter: CharacterResult? { get set }
+    func characterFirstLoad(at: Int)
+    func startListening()
 }

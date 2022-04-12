@@ -9,7 +9,9 @@ import UIKit
 import RealmSwift
 import Alamofire
 
-class AllCharactersPresenter: CharacterViewOutput {
+class AllCharactersPresenter: AllCharactersViewOutput {
+    
+    // MARK: - Propierties
     var view: AllCharactersViewController?
     var charactersList: [CharacterResult]? = nil
     var searchCharacter: [CharacterResult]? = nil
@@ -18,12 +20,10 @@ class AllCharactersPresenter: CharacterViewOutput {
     private var loadAfterLostConnection = false
     private var lastOffset: Int = 1
     private var hasNextPage = true
-    
-    // MARK: - Private properties
-    private var isRequestLocked = false
-    private var searching = false
-   
-    
+}
+
+// MARK: - CharacterFirstLoad
+extension AllCharactersPresenter {
     func characterFirstLoad(at: Int) {
         RickAndmortyService().getCharacters(request: CharacterRequest(name: nil, page: at)) { [weak self] result in
             guard let self = self else { return }
@@ -42,7 +42,10 @@ class AllCharactersPresenter: CharacterViewOutput {
             }
         }
     }
-    
+}
+
+// MARK: - StartListening
+extension AllCharactersPresenter {
     func startListening() {
         networkManager?.startListening(onUpdatePerforming: { [weak self] state in
             guard let self = self else { return }
@@ -61,7 +64,10 @@ class AllCharactersPresenter: CharacterViewOutput {
             }
         })
     }
-    
+}
+
+// MARK: - LoadCharacters
+extension AllCharactersPresenter {
     func loadCharacters(request: CharacterRequest, completionHendler: @escaping(Result<[CharacterResult], Error>) -> Void) {
         RickAndmortyService().getCharacters(request: request) { [weak self] result in
             guard let self = self else { return }
@@ -75,7 +81,10 @@ class AllCharactersPresenter: CharacterViewOutput {
             }
         }
     }
-    
+}
+
+// MARK: - SearchCharacters
+extension AllCharactersPresenter {
     func searchCharacters(name: String) {
         let request = CharacterRequest(name: name, page: nil)
         RickAndmortyService().getCharacters(request: request) { [weak self] result in
@@ -88,5 +97,5 @@ class AllCharactersPresenter: CharacterViewOutput {
                 print(error)
             }
         }
-}
+    }
 }

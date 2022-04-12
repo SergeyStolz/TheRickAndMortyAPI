@@ -7,9 +7,8 @@
 
 import UIKit
 
-protocol CharacterViewInput {
+protocol AllCharactersViewInput {
     func reloadData()
     func failure(error: Error)
     func showAlert()
-
 }

@@ -16,20 +16,23 @@ protocol CharacterCellDelegat: AnyObject {
 class CharacterCollectionViewCell: UICollectionViewCell {
     static let identifier = "CustomCollectionViewCell"
     
-    var state = Bool()
-    var characterId = 0
-    var statusCharacter = ""
-    var speciesCharacter = ""
-    var typeCharacter = ""
-    var genderCharacter = ""
-    
     weak var delegate: CharacterCellDelegat?
+    
+    // MARK: - Private propierties
+    private var state = Bool()
+    private var characterId = 0
+    private var statusCharacter = ""
+    private var speciesCharacter = ""
+    private var typeCharacter = ""
+    private var genderCharacter = ""
+    private var imageCharacter = ""
     
     private let realm = try! Realm()
     private lazy var items: Results<FavoritesRealmModel>! = {
         self.realm.objects(FavoritesRealmModel.self)
     }()
     
+    // MARK: - Private Views
     private lazy var characterImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -55,41 +58,73 @@ class CharacterCollectionViewCell: UICollectionViewCell {
         imageView.image = UIImage(systemName: "star.fill")?
             .withRenderingMode(.alwaysTemplate)
         imageView.tintColor = .black
-        
         return imageView
     }()
     
     private lazy var isFavoriteButton: UIButton = {
         let button = UIButton()
-        button.addTarget(self,
-                         action: #selector(setupIsFavouriteButtonColor),
-                         for: .touchUpInside
-        )
+        button.addTarget(self, action: #selector(setupIsFavouriteButtonColor),for: .touchUpInside)
         button.addShadow(color: UIColor.green.cgColor, shadowRadius: 4, shadowOpacity: 0.7)
         return button
     }()
     
-    @objc func setupIsFavouriteButtonColor(sender:UIButton) {
+    // MARK: - Life Cycle
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.backgroundColor = .systemBackground
+        contentView.addSubview(nameCharacterLabel)
+        contentView.addSubview(characterImageView)
+        contentView.addSubview(isFavoriteButton)
+        isFavoriteButton.addSubview(isFavoriteImageStar)
+        contentView.clipsToBounds = true
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        characterImageView.easy.layout( Edges() )
+        isFavoriteButton.easy.layout( Left(4), Top(4),  Width(23), Height(23) )
+        isFavoriteImageStar.easy.layout( Edges() )
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        nameCharacterLabel.text = nil
+        characterImageView.image = nil
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// MARK: - SetupIsFavouriteButtonColor
+extension CharacterCollectionViewCell {
+    @objc private func setupIsFavouriteButtonColor(sender:UIButton) {
         if sender.tag == isFavoriteButton.tag {
-            if isFavoriteButton.isSelected == true {
-                isFavoriteImageStar.image = UIImage(systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
+            if isFavoriteButton.isSelected {
+                isFavoriteImageStar.image = UIImage(
+                    systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
                 isFavoriteImageStar.tintColor = .black
-                state = false
                 isFavoriteButton.isSelected = false
+                state = false
             } else {
-                isFavoriteImageStar.image = UIImage(systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
+                isFavoriteImageStar.image = UIImage(
+                    systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
                 isFavoriteImageStar.tintColor = .systemGreen
-                
-                state = true
                 isFavoriteButton.isSelected = true
+                state = true
             }
             delegate?.infoStateDelegate(name: nameCharacterLabel.text ?? "", state: state)
-            
         }
-        
+        configureFavoriteCharacter()
+    }
+}
+
+// MARK: - Realm
+extension CharacterCollectionViewCell {
+    private func configureFavoriteCharacter() {
         let realmModel: FavoritesRealmModel!
         realmModel = FavoritesRealmModel()
-        
         realmModel.id = characterId
         realmModel.nameCharacter = nameCharacterLabel.text!
         realmModel.statusCharacter = statusCharacter
@@ -97,9 +132,7 @@ class CharacterCollectionViewCell: UICollectionViewCell {
         realmModel.typeCharacter = typeCharacter
         realmModel.genderCharacter = genderCharacter
         realmModel.state = state
-        guard let data = characterImageView.image!.pngData() else { return }
-        realmModel.imageCharacter = data
-        
+        realmModel.imageCharacter = imageCharacter
         if isFavoriteButton.isSelected {
             setFavoriteCharacter(model: realmModel)
         } else {
@@ -107,14 +140,14 @@ class CharacterCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    func setFavoriteCharacter(model: FavoritesRealmModel) {
+    private func setFavoriteCharacter(model: FavoritesRealmModel) {
         let realm = try? Realm()
         try? realm?.write {
             realm?.add(model)
         }
     }
     
-    func deleteFavoriteCharacter(model: FavoritesRealmModel) {
+    private func deleteFavoriteCharacter(model: FavoritesRealmModel) {
         let realmModel: FavoritesRealmModel!
         realmModel = FavoritesRealmModel()
         realmModel.id = characterId
@@ -131,39 +164,11 @@ class CharacterCollectionViewCell: UICollectionViewCell {
             print("error - \(error.localizedDescription)")
         }
     }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        contentView.backgroundColor = .systemBackground
-        contentView.addSubview(nameCharacterLabel)
-        contentView.addSubview(characterImageView)
-        contentView.addSubview(isFavoriteButton)
-        isFavoriteButton.addSubview(isFavoriteImageStar)
-        contentView.clipsToBounds = true
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        characterImageView.easy.layout( Edges() )
-        //        nameCharacterLabel.easy.layout( Left(), Right(), Bottom(), Height(45) )
-        isFavoriteButton.easy.layout( Left(4), Top(4),  Width(23), Height(23) )
-        isFavoriteImageStar.easy.layout( Edges() )
-    }
-    override func draw(_ rect: CGRect) {
-        //        nameCharacterLabel.roundCorners([.bottomLeft, .bottomRight], radius: 12)
-    }
-    
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        nameCharacterLabel.text = nil
-        characterImageView.image = nil
-    }
-    
-    func fill(item: CharactersCellViewModel) {
+}
+
+// MARK: - FillCharacter
+extension CharacterCollectionViewCell {
+    func fillCharacter(item: CharactersCellViewModel) {
         nameCharacterLabel.text = item.name
         characterId = item.id
         statusCharacter = item.status
@@ -171,40 +176,45 @@ class CharacterCollectionViewCell: UICollectionViewCell {
         typeCharacter = item.type
         genderCharacter = item.gender
         setFavoriteButton(isFavorite: item.isFavorite)
-        
-        let urlString = item.image
-        guard let url = URL(string: urlString) else { return }
+        imageCharacter = item.image
+        guard let url = URL(string: imageCharacter) else { return }
         characterImageView.kf.indicatorType = .activity
         characterImageView.kf.setImage(with: url)
-    }
-    
-    func fill(item: SearchCharactersViewModel) {
-        nameCharacterLabel.text = item.name
-        characterId = item.id
-        statusCharacter = item.status
-        speciesCharacter = item.species
-        typeCharacter = item.type
-        genderCharacter = item.gender
-        setFavoriteButton(isFavorite: item.isFavorite)
-        
-        let urlString = item.image
-        guard let url = URL(string: urlString) else { return }
-        characterImageView.kf.indicatorType = .activity
-        characterImageView.kf.setImage(with: url)
-    }
-    
-    func setFavoriteButton(isFavorite: Bool) {
-        if isFavorite == false {
-            isFavoriteImageStar.image = UIImage(systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
-            isFavoriteImageStar.tintColor = .black
-            state = false
-            isFavoriteButton.isSelected = false
-        } else {
-            isFavoriteImageStar.image = UIImage(systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
-            isFavoriteImageStar.tintColor = .systemGreen
-            state = true
-            isFavoriteButton.isSelected = true
-        }
     }
 }
 
+// MARK: - FillSearch
+extension CharacterCollectionViewCell {
+    func fillSearch(item: SearchCharactersViewModel) {
+        nameCharacterLabel.text = item.name
+        characterId = item.id
+        statusCharacter = item.status
+        speciesCharacter = item.species
+        typeCharacter = item.type
+        genderCharacter = item.gender
+        setFavoriteButton(isFavorite: item.isFavorite)
+        imageCharacter = item.image
+        guard let url = URL(string: imageCharacter) else { return }
+        characterImageView.kf.indicatorType = .activity
+        characterImageView.kf.setImage(with: url)
+    }
+}
+
+// MARK: - SetFavoriteButton
+extension CharacterCollectionViewCell {
+    func setFavoriteButton(isFavorite: Bool) {
+        if !isFavorite {
+            isFavoriteImageStar.image = UIImage(
+                systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
+            isFavoriteImageStar.tintColor = .black
+            isFavoriteButton.isSelected = false
+            state = false
+        } else {
+            isFavoriteImageStar.image = UIImage(
+                systemName: "star.fill")?.withRenderingMode(.alwaysTemplate)
+            isFavoriteImageStar.tintColor = .systemGreen
+            isFavoriteButton.isSelected = true
+            state = true
+        }
+    }
+}

@@ -8,7 +8,6 @@
 import Foundation
 
 protocol DetailCharacterInput {
-    func reloadData()
     func failure(error: Error)
     func succes()
 }

@@ -7,8 +7,9 @@
 
 import UIKit
 
-struct FavoritesCellViewModel {
-    var image = UIImage()
+struct FavoritesCellViewModel: DetailCharacterProtocol {
+    var id: Int = 0
+    var image = ""
     var name = ""
     var status = ""
     var species = ""
@@ -17,8 +18,8 @@ struct FavoritesCellViewModel {
     var favorite = false
     
     init(_ items: FavoritesRealmModel) {
-        guard let imageName = items.imageCharacter,
-              let imageData = UIImage(data: imageName),
+        let id = items.id
+        guard let image = items.imageCharacter,
               let name = items.nameCharacter,
               let status = items.statusCharacter,
               let species = items.speciesCharacter,
@@ -27,7 +28,8 @@ struct FavoritesCellViewModel {
         else {
             return
         }
-        self.image = imageData
+        self.id = id
+        self.image = image
         self.name = name
         self.status = status
         self.species = species

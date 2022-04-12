@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol CharacterViewOutput {
+protocol AllCharactersViewOutput {
     var charactersList: [CharacterResult]? { get set }
     var searchCharacter: [CharacterResult]? { get set }
     func startListening()
