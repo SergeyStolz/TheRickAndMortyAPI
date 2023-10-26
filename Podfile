@@ -8,7 +8,7 @@ target 'The Rick And Morty' do
   pod 'R.swift'
   pod 'Moya'
   pod 'EasyPeasy'
-  pod 'Kingfisher'
+  pod 'Kingfisher', '7.6.1'
   pod 'SkeletonView'
   pod 'DropDown'
   pod 'RealmSwift'

@@ -22,10 +22,8 @@ class DetailCharacterPresenter: DetailCharacterOutput {
     private var loadAfterLostConnection = false
     private var lastOffset: Int = 1
     private var hasNextPage = true
-}
-
-// MARK: - CharacterFirstLoad
-extension DetailCharacterPresenter {
+    
+    // MARK: - CharacterFirstLoad
     func characterFirstLoad(at: Int) {
         RickAndmortyService().getCharacters(request: CharacterRequest(name: nil, page: at)) { [weak self] result in
             guard let self = self else { return }
@@ -44,10 +42,8 @@ extension DetailCharacterPresenter {
             }
         }
     }
-}
-
-// MARK: - StartListening
-extension DetailCharacterPresenter {
+    
+    // MARK: - StartListening
     func startListening() {
         networkManager?.startListening(onUpdatePerforming: { [weak self] state in
             guard let self = self else { return }
@@ -66,10 +62,9 @@ extension DetailCharacterPresenter {
             }
         })
     }
-}
-
-// MARK: - LoadCharacters
-extension DetailCharacterPresenter {
+    
+    
+    // MARK: - LoadCharacters
     func loadCharacters(request: CharacterRequest, completionHendler: @escaping(Result<[CharacterResult], Error>) -> Void) {
         RickAndmortyService().getCharacters(request: request) { [weak self] result in
             guard let self = self else { return }

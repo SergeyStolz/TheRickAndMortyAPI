@@ -17,10 +17,8 @@ class PresenterSplashScreen: SplashScreenViewOutput {
     private let networkManager = NetworkReachabilityManager()
     private var loadAfterLostConnection = false
     private var lastOffset: Int = 1
-}
-
-// MARK: - CharacterFirstLoad
-extension PresenterSplashScreen {
+    
+    // MARK: - CharacterFirstLoad
     func characterFirstLoad(at: Int) {
         view.startActivityView()
         RickAndmortyService().getCharacters(request: CharacterRequest(name: nil, page: at)) { [weak self] result in
@@ -33,10 +31,8 @@ extension PresenterSplashScreen {
             }
         }
     }
-}
-
-// MARK: - StartListening
-extension PresenterSplashScreen {
+    
+    // MARK: - StartListening
     func startListening() {
         networkManager?.startListening(onUpdatePerforming: { [weak self] state in
             guard let self = self else { return }

@@ -41,7 +41,7 @@ class DetailCharacterCollectionViewCell: UICollectionViewCell {
         characterImageView.image = nil
     }
     
-    func filll(item: CharacterResult) {
+    func fillCharResult(item: CharacterResult) {
         let urlString = item.image
         guard let url = URL(string: urlString) else { return }
         characterImageView.kf.indicatorType = .activity

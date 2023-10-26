@@ -18,10 +18,8 @@ class EpisodesPresenter: EpisodesViewOutput {
     private var loadAfterLostConnection = false
     private var lastOffset: Int = 1
     private var hasNextPage = true
-}
-
-// MARK: - EpisodeFirstLoad
-extension EpisodesPresenter {
+    
+    // MARK: - EpisodeFirstLoad
     func episodeFirstLoad(at: Int) {
         RickAndmortyService().getEpisode(request: EpisodesRequest(name: nil, page: at)) { [weak self] result in
             guard let self = self else { return }
@@ -40,10 +38,8 @@ extension EpisodesPresenter {
             }
         }
     }
-}
-
-// MARK: - StartListening
-extension EpisodesPresenter {
+    
+    // MARK: - StartListening
     func startListening() {
         networkManager?.startListening(onUpdatePerforming: { [weak self] state in
             guard let self = self else { return }
@@ -62,10 +58,8 @@ extension EpisodesPresenter {
             }
         })
     }
-}
-
-// MARK: - LoadCharacters
-extension EpisodesPresenter {
+    
+    // MARK: - LoadCharacters
     func loadCharacters(request: EpisodesRequest, completionHendler: @escaping(Result<[EpisodeResult], Error>) -> Void) {
         RickAndmortyService().getEpisode(request: request) { [weak self] result in
             guard let self = self else { return }

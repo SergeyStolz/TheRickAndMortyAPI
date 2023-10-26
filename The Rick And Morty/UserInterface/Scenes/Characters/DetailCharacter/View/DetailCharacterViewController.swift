@@ -128,7 +128,7 @@ extension DetailCharacterViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DetailCharacterCollectionViewCell.identifier, for: indexPath) as! DetailCharacterCollectionViewCell
         
         guard let character = presenter.allCharacters?[indexPath.item] else { return cell }
-        cell.filll(item: character)
+        cell.fillCharResult(item: character)
         cell.addShadow(color: UIColor.green.cgColor, shadowRadius: 7, shadowOpacity: 0.4)
         return cell
     }
